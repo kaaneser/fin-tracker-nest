@@ -15,7 +15,7 @@ export const BudgetSchema = new Schema({
 export interface Budget extends Document {
     id: string;
     name: string;
-    category: Category | string;
+    category: Category;
     amount: number;
     startDate: Date;
     endDate?: Date;
