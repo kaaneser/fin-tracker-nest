@@ -5,13 +5,15 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { CategoryModule } from './category/category.module';
+import { BudgetsModule } from './budgets/budgets.module';
 
 @Module({
   imports: [
     MongooseModule.forRoot("mongodb://localhost/fin-tracker-db"),
     AuthModule,
     TransactionsModule,
-    CategoryModule
+    CategoryModule,
+    BudgetsModule
   ],
   controllers: [AppController],
   providers: [AppService],
