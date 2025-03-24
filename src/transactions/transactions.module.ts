@@ -6,6 +6,7 @@ import { TransactionSchema } from './schema/transaction.schema';
 import { JwtAuthGuard } from '../helper/jwt-auth.guard';
 import { CategoryModule } from 'src/category/category.module';
 import { CategorySchema } from 'src/category/schema/category.schema';
+import { TransactionCronService } from './cron/transactions-cron.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { CategorySchema } from 'src/category/schema/category.schema';
     ]),
   ],
   controllers: [TransactionsController],
-  providers: [TransactionsService],
+  providers: [TransactionsService, TransactionCronService],
   exports: [TransactionsService]
 })
 export class TransactionsModule {}

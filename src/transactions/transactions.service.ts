@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 import { Transaction } from "./schema/transaction.schema";
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Category } from 'src/category/schema/category.schema';
-import * as moment from 'moment';
+import { calculateNextExecDate } from 'src/utils/calculateNextExecDate';
 
 @Injectable()
 export class TransactionsService {
@@ -13,21 +13,6 @@ export class TransactionsService {
     @InjectModel("Category") private categoryModel: Model<Category>
   ) {}
 
-  private async calculateNextExecDate(date: Date, frequency: "daily" | "weekly" | "monthly" | "yearly"): Promise<Date> {
-    switch (frequency) {
-      case "daily":
-        return moment(date).add(1, "days").toDate();
-      case "weekly":
-        return moment(date).add(1, "weeks").toDate();
-      case "monthly":
-        return moment(date).add(1, "months").toDate();
-      case "yearly":
-        return moment(date).add(1, "years").toDate();
-      default:
-        throw new Error("Invalid frequency type");
-    }
-  }
-
   async createTransaction(createTransactionDto: CreateTransactionDto, userId: string): Promise<Transaction> {
     const transactionData: any = {
       ...createTransactionDto,
@@ -35,7 +20,7 @@ export class TransactionsService {
     };
 
     if (createTransactionDto.isRecurring && createTransactionDto.frequency) {
-      transactionData.nextExecDate = await this.calculateNextExecDate(new Date(), createTransactionDto.frequency);
+      transactionData.nextExecDate = await calculateNextExecDate(new Date(), createTransactionDto.frequency);
     }
     
     const transaction = new this.transactionModel(transactionData);
@@ -77,7 +62,7 @@ export class TransactionsService {
 
   async updateTransactionById(id: string, updateTransactionDto: CreateTransactionDto, userId: string) {
     if (updateTransactionDto.isRecurring && updateTransactionDto.frequency) {
-      updateTransactionDto.nextExecDate = await this.calculateNextExecDate(new Date(), updateTransactionDto.frequency);
+      updateTransactionDto.nextExecDate = await calculateNextExecDate(new Date(), updateTransactionDto.frequency);
     }
     
     const updatedTransaction = await this.transactionModel.findOneAndUpdate(
