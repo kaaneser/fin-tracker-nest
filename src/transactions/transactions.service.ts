@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 import { Transaction } from "./schema/transaction.schema";
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Category } from 'src/category/schema/category.schema';
-
+import { calculateNextExecDate } from 'src/utils/calculateNextExecDate';
 
 @Injectable()
 export class TransactionsService {
@@ -14,10 +14,16 @@ export class TransactionsService {
   ) {}
 
   async createTransaction(createTransactionDto: CreateTransactionDto, userId: string): Promise<Transaction> {
-    const transaction = new this.transactionModel({
+    const transactionData: any = {
       ...createTransactionDto,
       userId
-    });
+    };
+
+    if (createTransactionDto.isRecurring && createTransactionDto.frequency) {
+      transactionData.nextExecDate = await calculateNextExecDate(new Date(), createTransactionDto.frequency);
+    }
+    
+    const transaction = new this.transactionModel(transactionData);
 
     return transaction.save();
   }
@@ -55,6 +61,10 @@ export class TransactionsService {
   }
 
   async updateTransactionById(id: string, updateTransactionDto: CreateTransactionDto, userId: string) {
+    if (updateTransactionDto.isRecurring && updateTransactionDto.frequency) {
+      updateTransactionDto.nextExecDate = await calculateNextExecDate(new Date(), updateTransactionDto.frequency);
+    }
+    
     const updatedTransaction = await this.transactionModel.findOneAndUpdate(
       { userId, _id: id },
       { $set: updateTransactionDto },
