@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Query, Get, Post, Body, Put, Param, Delete, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from "../helper/jwt-auth.guard";
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { CurrentUser } from "../auth/decorator/current-user.decorator";
+import { TransactionFilters } from 'src/types/filters.type';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -19,14 +20,30 @@ export class TransactionsController {
 
   @Get()
   getAllTransactions(
-    @CurrentUser() user: any
+    @CurrentUser() user: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('category') category?: string,
+    @Query('isRecurring') isRecurring?: string
   ) {
-    return this.transactionsService.getAllTransactions(user.userId);
+    const filters: TransactionFilters = {
+      startDate,
+      endDate,
+      category,
+      isRecurring: isRecurring ? isRecurring === "true" : undefined
+    }
+
+    return this.transactionsService.getAllTransactions(user.userId, filters);
   }
 
   @Get("balance")
   async getBalance(@CurrentUser() user: any) {
     return this.transactionsService.getBalance(user.userId);
+  }
+
+  @Get("monthlySummary")
+  async getMonthlyBalance(@CurrentUser() user: any) {
+    return this.transactionsService.getMonthlyBalance(user.userId);
   }
 
   @Get(':id')

@@ -5,6 +5,7 @@ import { Transaction } from "./schema/transaction.schema";
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Category } from 'src/category/schema/category.schema';
 import { calculateNextExecDate } from 'src/utils/calculateNextExecDate';
+import { TransactionFilters } from 'src/types/filters.type';
 
 @Injectable()
 export class TransactionsService {
@@ -28,8 +29,28 @@ export class TransactionsService {
     return transaction.save();
   }
 
-  async getAllTransactions(userId: string): Promise<Transaction[]> {
-    return this.transactionModel.find({ userId })
+  async getAllTransactions(
+    userId: string,
+    filters?: TransactionFilters
+  ): Promise<Transaction[]> {
+    const query: any = { userId };
+
+    if (filters?.startDate || filters?.endDate) {
+      query.date = {};
+
+      if (filters.startDate) query.date.$gte = new Date(filters.startDate);
+      if (filters.endDate) query.date.$lte = new Date(filters.endDate);
+    }
+
+    if (filters?.category) {
+      query.category = filters.category;
+    }
+
+    if (filters?.isRecurring !== undefined) {
+      query.isRecurring = filters.isRecurring;
+    }
+
+    return this.transactionModel.find(query)
       .populate("category", "name type")
       .sort({ date: -1 });
   }
@@ -58,6 +79,30 @@ export class TransactionsService {
       userId,
       totalBalance
     };
+  }
+
+  async getMonthlyBalance(userId: string): Promise<any> {
+    const transactions = await this.transactionModel
+      .find({ userId })
+      .populate("category", "type");
+
+    const monthlySummary: { [key: string]: { income: number; expense: number } } = {};
+
+    for (const transaction of transactions) {
+      const month = transaction.date.toISOString().slice(0, 7);
+
+      if (!monthlySummary[month]) {
+        monthlySummary[month] = { income: 0, expense: 0 };
+      }
+
+      if (transaction.category["type"] === "income") {
+        monthlySummary[month]["income"] += transaction.amount;
+      } else {
+        monthlySummary[month]["expense"] += transaction.amount;
+      }
+    }
+
+    return monthlySummary;
   }
 
   async updateTransactionById(id: string, updateTransactionDto: CreateTransactionDto, userId: string) {
